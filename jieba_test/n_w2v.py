@@ -101,13 +101,13 @@ def corpus_dict(model=None,corpus=None):
         print("没输入，你让我咋输出...")
 
 def word2vec_train(corpus):
-    program=os.path.basename(sys.argv[0])
-    logger=logging.getLogger(program)
+    program = os.path.basename(sys.argv[0])
+    logger = logging.getLogger(program)
  
     logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s')
     logging.root.setLevel(level=logging.INFO)
     logger.info("running %s" % ' '.join(sys.argv))
-    model=Word2Vec(LineSentence(corpus),
+    model = Word2Vec(LineSentence(corpus),
                      size=vocab_dim,
                      min_count=n_exposures,
                      window=window_size,
