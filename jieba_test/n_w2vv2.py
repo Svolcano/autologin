@@ -4,6 +4,8 @@ import jieba
 import logging
 import socket
 
+new_line_flag = b'9900999999911000999'
+
 
 def recv_all(sock):
     g_buf_len = 8092
@@ -13,6 +15,8 @@ def recv_all(sock):
             new_line = sock.recv(g_buf_len)
             if new_line:
                 new_line_buf.append(new_line)
+            else:
+                break
         except Exception as e:
             print(e)
             return (b''.join(new_line_buf))
@@ -22,25 +26,30 @@ def recv_all(sock):
 def time_server(stop_file=None, address=('www.jingmeiti.com', 9991)):
     socket.setdefaulttimeout(1)
     stopwords = get_stopwords(stop_file)
-    while True:
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(address)
-            while 1:
-                sock.send(b'g ')
-                line = recv_all(sock)
-                if not line:
-                    continue
-                try:
-                    line = line.decode()
-                except Exception as e:
-                    print(e)
-                line = sentence2word(line, stopwords=stopwords)
-                yield line
-        except Exception as e:
-            print('time server: ', e)
-        finally:
-            sock.close()
+    with open("backup_content.sql", 'a', encoding='utf-8') as fh:
+        while True:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect(address)
+                while 1:
+                    sock.send(b'g')
+                    line = recv_all(sock)
+                    if not line:
+                        continue
+                    try:
+                        line = line.decode()
+                        print("one line")
+                        fh.write(line+"\n")
+                        fh.flush()
+                        line = sentence2word(line, stopwords=stopwords)
+                        yield line
+                    except Exception as e:
+                        print(e)
+
+            except Exception as e:
+                print('time server: ', e)
+            finally:
+                sock.close()
 
 
 def get_stopwords(file_name):
@@ -85,12 +94,12 @@ class MySentences(object):
                             yield line
 
 
-def train(sentences):
+def train():
     # set up logging
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
     stopwords_fn = 'stop_words.txt'
     model_fn = 'edu_word2vec.model'
-    buf_size = 2000
+    buf_size = 10
     counter = 0
     save_counter = 0
     while 1:
@@ -104,11 +113,12 @@ def train(sentences):
                 if counter >= buf_size:
                     if os.path.exists(model_fn):
                         model = gensim.models.Word2Vec.load(model_fn)
-                        model.train(lines_buf)
+                        tte = model.corpus_count + counter
+                        model.train(lines_buf, total_examples=tte)
                     else:
-                        model = gensim.models.Word2Vec(sentences,
+                        model = gensim.models.Word2Vec(lines_buf,
                                                    size=100,
-                                                   max_vocab_size=8000000,
+                                                   max_vocab_size=None,
                                                    workers=8,
                                                    min_count=2,
                                                    )
@@ -136,4 +146,4 @@ def use():
 
 
 if __name__ == "__main__":
-    train(time_server())
+    train()
