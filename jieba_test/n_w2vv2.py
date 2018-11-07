@@ -99,7 +99,7 @@ def train():
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
     stopwords_fn = 'stop_words.txt'
     model_fn = 'edu_word2vec.model'
-    buf_size = 10
+    buf_size = 400
     counter = 0
     save_counter = 0
     while 1:
@@ -114,7 +114,7 @@ def train():
                     if os.path.exists(model_fn):
                         model = gensim.models.Word2Vec.load(model_fn)
                         tte = model.corpus_count + counter
-                        model.train(lines_buf, total_examples=tte)
+                        model.train(lines_buf, total_examples=tte, epochs=5)
                     else:
                         model = gensim.models.Word2Vec(lines_buf,
                                                    size=100,
